@@ -1,0 +1,1 @@
+# decouple-serverless-apps - SQS
