@@ -10,6 +10,21 @@ Resources:
       Subscription:
         - Protocol: lambda
           Endpoint: !GetAtt TopicConsumerFunction.Arn
+
+  # Add an https subscription only for notifications with attribute: notificationType=external          
+  ExternalSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      TopicArn: !Ref SnsTopic
+      #
+      #
+      # Update  with your https://webhook.site/ endpoint !
+      #
+      Endpoint: https://webhook.site/72ea3d21-3a80-47e6-a2b8-e35e81db7c59
+      Protocol: https
+      FilterPolicy:
+        notificationType:
+          - external
   
   # Provide permission for SNS to invoke the Lambda function
   TopicConsumerFunction1Permission:
