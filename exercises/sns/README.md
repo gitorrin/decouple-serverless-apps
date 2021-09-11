@@ -2,7 +2,7 @@
 
 ## Deployment Instructions
 
-1. Change directory to the directory:
+1. Change directory to this folder:
     ```
     cd sns
     ```
