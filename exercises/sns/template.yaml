@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Sending notifications to SNS
+
+Resources:
+  # Define the SNS topic
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: lambda
+          Endpoint: !GetAtt TopicConsumerFunction.Arn
+  
+  # Provide permission for SNS to invoke the Lambda function
+  TopicConsumerFunction1Permission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref TopicConsumerFunction
+      Principal: sns.amazonaws.com
+
+  # Define the publisher Lambda function with permissions
+  TopicPublisherFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/publisher/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Timeout: 3
+      MemorySize: 128
+      Environment:
+        Variables:
+          SNStopic: !Ref SnsTopic
+      Policies:
+        ## Read more about SAM Policy templates at:
+        ## https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt SnsTopic.TopicName
+
+   # Define the consumer Lambda function
+  TopicConsumerFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/consumer/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Timeout: 3
+      MemorySize: 128
+      
+      
+Outputs:
+  TopicPublisherFunction:
+    Description: TopicPublisherFunction function name
+    Value: !Ref TopicPublisherFunction
+  
+  TopicConsumerFunction:
+    Description: TopicConsumerFunction function name
+    Value: !Ref TopicConsumerFunction
+  
+  SNStopicName:
+    Description: SNS topic name
+    Value: !GetAtt SnsTopic.TopicName
+
+  SNStopicARN:
+    Description: SNS topic ARN
+    Value: !Ref SnsTopic
