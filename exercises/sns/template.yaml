@@ -20,11 +20,49 @@ Resources:
       #
       # Update  with your https://webhook.site/ endpoint !
       #
-      Endpoint: https://webhook.site/72ea3d21-3a80-47e6-a2b8-e35e81db7c59
+      Endpoint: https://webhook.site/ebc711b1-888b-45d0-ba46-b87c7adce9f3
       Protocol: https
       FilterPolicy:
         notificationType:
           - external
+      DeliveryPolicy:
+        # Set few retries so that we can see the message in DLQ
+        healthyRetryPolicy:
+          numRetries: 3
+          minDelayTarget: 1
+          maxDelayTarget: 3
+          numMinDelayRetries: 1
+          numMaxDelayRetries: 2
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ExternalSubscriptionDLQ.Arn
+        
+  
+  # This is the DLQ for the HttpSubscription
+  ExternalSubscriptionDLQ:
+    Type: AWS::SQS::Queue
+  
+  # Provide permission for SNS to send to DLQ
+  DLQPolicy: 
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      Queues: 
+        - !Ref ExternalSubscriptionDLQ
+      PolicyDocument: 
+        Statement: 
+          - 
+            Action: 
+              - sqs:SendMessage
+            Effect: Allow
+            Resource: 
+              - !GetAtt ExternalSubscriptionDLQ.Arn
+            Principal:
+              AWS: "*"
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: SnsTopic  
   
   # Provide permission for SNS to invoke the Lambda function
   TopicConsumerFunction1Permission:
