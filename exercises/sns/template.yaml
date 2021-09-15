@@ -99,6 +99,22 @@ Resources:
       Runtime: nodejs12.x
       Timeout: 3
       MemorySize: 128
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 60
+        MaximumRetryAttempts: 2
+        DestinationConfig:
+          OnSuccess:
+            Type: SQS
+            Destination: !GetAtt ConsumerSuccessDestination.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ConsumerFailureDestination.Arn
+  
+  ConsumerSuccessDestination:
+    Type: AWS::SQS::Queue
+    
+  ConsumerFailureDestination:
+    Type: AWS::SQS::Queue
       
       
 Outputs:
