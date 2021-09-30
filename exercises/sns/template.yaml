@@ -115,6 +115,106 @@ Resources:
     
   ConsumerFailureDestination:
     Type: AWS::SQS::Queue
+    
+  ReportsQueue:
+    Type: AWS::SQS::Queue
+    
+  ReportsQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt ReportsQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: True
+      TopicArn: !Ref SnsTopic
+    
+  AuditQueue:
+    Type: AWS::SQS::Queue
+  
+  AuditQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt AuditQueue.Arn
+      Protocol: sqs
+      RawMessageDelivery: True
+      TopicArn: !Ref SnsTopic
+      
+  # SNS should be granted permissions to call SQS
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ReportsQueue
+        - !Ref AuditQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource: "*"
+            Condition:
+              ArnEquals: 
+                aws:SourceArn:
+                  !Ref SnsTopic
+    
+  ReportsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
+      CodeUri: src/reports/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ReportsQueue.Arn
+            # Try also with batchSize 10 - update lambda code, error processing
+            BatchSize: 1
+      MemorySize: 128
+      Timeout: 25 # Chosen to be less than the default SQS Visibility Timeout of 30 seconds
+      Tracing: Active
+      Role:
+        Fn::Sub: ${SqsConsumerFunctionRole.Arn}
+        
+  AuditFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
+      CodeUri: src/audit/
+      Handler: app.handler
+      Runtime: nodejs12.x
+      Events:
+        SQSQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AuditQueue.Arn
+            # Try also with batchSize 10 - update lambda code, error processing
+            BatchSize: 1
+      MemorySize: 128
+      Timeout: 25 # Chosen to be less than the default SQS Visibility Timeout of 30 seconds
+      Tracing: Active
+      Role:
+        Fn::Sub: ${SqsConsumerFunctionRole.Arn}
+  
+  SqsConsumerFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - "lambda.amazonaws.com"
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+      - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+  
       
       
 Outputs:
