@@ -48,8 +48,7 @@ Resources:
   OrdersEventBus:
     Type: AWS::Events::EventBus
     Properties: 
-      EventSourceName: String
-      Name: String
+      Name: Orders
   ApiDestinationDeliveryRule:
     Type: AWS::Events::Rule
     Properties:
