@@ -44,14 +44,19 @@ Resources:
       InvocationEndpoint: !Ref ApiDestinationUrl
       HttpMethod: POST
       InvocationRateLimitPerSecond: 300
-      
+  
+  OrdersEventBus:
+    Type: AWS::Events::EventBus
+    Properties: 
+      EventSourceName: String
+      Name: String
   ApiDestinationDeliveryRule:
     Type: AWS::Events::Rule
     Properties:
       EventPattern:
         source:
           - "EventsForMyAPIdestination"
-      EventBusName: "Orders"
+      EventBusName: !Ref OrdersEventBus
       Name: "apidestinations-rule"
       State: "ENABLED"
       Targets: 
