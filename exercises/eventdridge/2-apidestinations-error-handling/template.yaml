@@ -39,7 +39,7 @@ Resources:
   TestApiDestination:
     Type: AWS::Events::ApiDestination
     Properties:
-      Name: 'my-apidestination'
+      Name: 'my-apidestination-2'
       ConnectionArn: !GetAtt TestConnection.Arn
       InvocationEndpoint: !Ref ApiDestinationUrl
       HttpMethod: POST
@@ -52,7 +52,7 @@ Resources:
         source:
           - "EventsForMyAPIdestination"
       EventBusName: "Orders"
-      Name: "apidestinations-rule"
+      Name: "apidestinations-rule-2"
       State: "ENABLED"
       Targets: 
         - 
