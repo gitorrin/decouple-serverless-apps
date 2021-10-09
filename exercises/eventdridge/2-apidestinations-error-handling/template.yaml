@@ -107,7 +107,7 @@ Resources:
           Action: SQS:SendMessage
           Resource:  !GetAtt ApiDestinationDLQ.Arn
       Queues:
-        - Ref: MySqsQueue
+        - Ref: ApiDestinationDLQ
       
   ApiDestinationDLQDepthAlarm: 
     Type: AWS::CloudWatch::Alarm
